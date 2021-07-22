@@ -1,0 +1,132 @@
+Terminal 1 Help File version1.00
+
+Command Reference
+
+main menu
+[h]ack
+[i]nfo
+[f1]help
+
+upload
+[v]irus
+[c]rypto miner
+[w]ipe data
+[i]nfo
+[b]ack to previous menu
+
+
++8.16.3.1 v:pc [b]
+>b
+
++8.16.3.1 [v]0.30 [c]0.50 [w]0.15 [i] [b] [t]
+>i
+
++8.16.3.1 cpu:2mhz ram:1024 kernel: [b] [t]
+>t
+
+t3.14 [h] [i]
+>i
+
+i cc:0.00 cpu: ram: k: fw: [b]
+>b
+ 
+t3.14 [h] [i]
+>h
+
+h [1]8.16.3.1 [2]2.312.1.2 [b]
+>2
+
++2.312.1.2 [v]0.50 [c]0.60 [w]0.10 [i] [b]
+>v
+
++2.312.1.2 pf [a] [b] [t]
+>a
+
++2.312.1.2 pf [a] [b] [t]
+>a
+
+
++2.312.1.2 pf [a] [b] [t]
+>a
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[v]virusUpload
+[c]cryotoJack
+[d]wipeEverything
+
+
+Terminal 3.14 Press any key to continue.
+>1
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Main [s]Search [i]Info
+>s
+
+Found [1]8.16.3.1 [2]2.312.1.2 [b]Back
+>1
+
+Connected to 8.16.3.1 [c]CrpytoJack [v]Upload Virus [b]Back [m]Main 
+8.16.3.1>c 
+
+CryptoMiner uploaded [b]Back [m]Main 
+8.16.3.1>
+
+Main [s]Search [i]Info
+>i
+
+Info [c]CryptoCurrency [h]Hardware [s]Software
+>c
+
+CryptoCurrency: 500 [m]Main [b]Back
+>b
+
+
+
+Main [s]Search [h]hardware [a]Account
+>s
+
+Search [1]8.16.3.1 [2]2.312.1.2
+>2
+
+Connected to 2.3.12.1.2 [s]StealData [p]PlantVirus [c]CryptoJack [i]Info
+>i
+
+Info:2.3.12.1.2 Location:Il Domain:none
+
+Main [m]Mine [b]Buy [s]Sell [i]Inventory
+> 
