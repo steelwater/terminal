@@ -1,0 +1,11 @@
+t.bat - start ---> term.bat
+term.bat  -start 
+tmain.bat -main menu
+send.bat - send data
+  safr.bat
+  sane.bat
+  sau.bat
+  sna.bat
+  ssa.bat
+tools.bat
+about.bat
