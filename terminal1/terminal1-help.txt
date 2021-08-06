@@ -1,0 +1,50 @@
+Terminal 1 Help File version1.00
+
+Command Reference
+
+main menu
+[h]ack
+[i]nfo
+[f1]help
+
+hack menu
+[v]irus (virus version)
+[c]rypto miner
+[w]ipe data
+[i]nfo
+[b]ack to previous menu
+
+
+hack menu diagram
+
+target ip address
+|
+|          virus version 
+|          |
+|          |       crypto miner version
+|          |       | 
+|          |       |       data wiper version
+|          |       |       |         
+|          |       |       |       target
+|          |       |       |       cpu info 
+|          |       |       |       |   
+|          |       |       |       |   previous menu
+|          |       |       |       |   |
+|          |       |       |       |   |   terminal
+|          |       |       |       |   |   main menu
+|          |       |       |       |   |   |
+|          |       |       |       |   |   |   this
+|          |       |       |       |   |   |   help diagram
+|          |       |       |       |   |   |   |
+|          |       |       |       |   |   |   |
+v          v       v       v       v   v   v   v
++8.16.3.1 [v]0.30 [c]0.50 [w]0.15 [i] [p] [t] [h]
+>
+
+
+
+
+
+status messages
+pc: process complete
+
