@@ -1,4 +1,27 @@
-the notes are in one note Terminal1 page
+only hack random ip addresses
+randomize ipaddresses
+
+scenario/story
+the story is told outside the game
+
+you found a terminal
+you turn it on
+it automatically connects to an ip address or server
+after connecting, you have limited number of turns:10-30 turns
+
+what to do after connecting
+
+hack
+plant virus
+plant crypto miner
+wipe computer
+
+
+endings
+get caught
+be free
+expose corporation
+join corporation
 
 
 
@@ -17,7 +40,7 @@ the notes are in one note Terminal1 page
 
 
 
-
+30 turns game
 
 
 +8.16.3.1 v:pc [b]

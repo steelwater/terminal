@@ -42,6 +42,17 @@ the king of the silver back pass
 
 the prodding child
 
+
+create prodding child vehicles 
+
+walker mech
+/---
+spider walker
+crab walker
+
+prodding saucer
+
+
  ()
  ~\^
  
@@ -59,6 +70,7 @@ the prodding child
   
   P
   
+  i
   
   ----
 
@@ -75,9 +87,31 @@ wttuuuttew
    1  1
    1  1
    G> G>
-  
-  
 
+
+ ....
+/,--,\  
+\    /
+
+
+  /\_...._/\
+ /  6,--,9  \  
+/            \
+
+  /\_...._/\
+ /  6,--,9  \  
+ \          /
+ 
+
+
+     {'\        /'} 
+    /   \_0000_/   \    .,
+   {.    6,~~,9    .}   @p' 
+   /                 \ ~OD
+ M/                   \M}}
+
+           
+'//////////"i
 
 ----
 finsihed
