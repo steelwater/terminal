@@ -88,9 +88,9 @@ the king of the silver back pass
 
               ,~.
              ~.  ~.
-            (   ~.~ 
-           .-/  ]
- /      /[/\__/--\  
+            (  ~.~ 
+            __/  ]
+ /      -/\__/---\  
  \,,,,/\    /'-_ /
  ()/-\     /\  \-----\
   /   \    \-\------\_\
@@ -106,7 +106,12 @@ the king of the silver back pass
 
   
 ----
-inprogress
+in progress
+
+
+  
+  ----
+finsihed
 
     i
   [- -]
@@ -121,9 +126,6 @@ wttuuuttew
    1  1 @p'
    1  1~OD
    G> G>}}
-  
-  ----
-finsihed
 
    i
   [- -]
