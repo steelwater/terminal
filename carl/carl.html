@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>CaRL v1.29</title>
+<style>
+    body.dark-mode {
+        background-color: #121212;
+        color: #ffffff;
+    }
+    pre {
+        font-family: monospace;
+        font-size: 16px;
+        line-height: 16px;
+    }
+    .visible {
+        background-color: rgba(255, 255, 255, 0.1);
+    }
+    .explored {
+        color: #666;
+    }
+    .game-over, .status-message {
+        color: red;
+    }
+</style>
+</head>
+<body class="dark-mode">
+<pre id="game"></pre>
+<pre id="status1"></pre>
+<pre id="status2"></pre>
+<pre id="status3"></pre>
+<pre id="status4"></pre>
+<pre id="status5"></pre>
+<script>
+class CarlGame {
+    constructor(options) {
+        this.width = options.width || 26;
+        this.height = options.height || 13;
+        this.level = 1;
+        this.floor = 1;
+        this.turn = 1;
+        this.fogOfWarEnabled = options.fogOfWarEnabled !== undefined ? options.fogOfWarEnabled : true;
+        this.keys = options.keys || {
+            up: ['ArrowUp', 'W', 'w'],
+            down: ['ArrowDown', 'S', 's'],
+            left: ['ArrowLeft', 'A', 'a'],
+            right: ['ArrowRight', 'D', 'd'],
+            useOrb: [' '],
+            toggleDarkMode: ['M', 'm'],
+            spendHp: ['E', 'e'],
+            spendSp: ['Q', 'q'],
+            restart: [' ']
+        };
+        this.carl = {
+            x: 1, y: 1, hp: options.hp || 30, baseHp: options.hp || 30,
+            sp: options.sp || 1, exp: 0, level: 1, orbs: 0,
+            skillDuration: 0, skillActive: false, statPoints: 0,
+            hasKey: false
+        };
+        this.gameOver = false;
+        this.initGame();
+    }
+
+    initGame() {
+        this.map = this.generateMaze();
+        this.ghouls = this.generateGhouls();
+        this.runes = this.generateRunes();
+        this.orbs = this.generateOrbs();
+        this.mausoleum = this.generateMausoleum();
+        this.key = null;
+        this.boss = null;
+        this.fogOfWar = this.generateFogOfWar();
+        this.explored = this.generateExploredMap();
+        this.gameOver = false;
+        if (this.floor === 3) {
+            this.boss = { x: Math.floor(this.width / 2), y: Math.floor(this.height / 2), hp: 160 };
+        }
+        this.updateFogOfWar();
+        this.render();
+        this.listenForInput();
+    }
+
+    generateMaze() {
+        const maze = Array.from({ length: this.height }, () => Array.from({ length: this.width }, () => '#'));
+        const stack = [{ x: 1, y: 1 }];
+        const directions = [
+            { x: 0, y: -2 }, // up
+            { x: 2, y: 0 },  // right
+            { x: 0, y: 2 },  // down
+            { x: -2, y: 0 }  // left
+        ];
+
+        maze[1][1] = ' ';
+        while (stack.length > 0) {
+            const current = stack.pop();
+            directions.sort(() => Math.random() - 0.5);
+
+            for (const dir of directions) {
+                const nx = current.x + dir.x;
+                const ny = current.y + dir.y;
+
+                if (nx > 0 && nx < this.width - 1 && ny > 0 && ny < this.height - 1 && maze[ny][nx] === '#') {
+                    maze[ny][nx] = ' ';
+                    maze[current.y + dir.y / 2][current.x + dir.x / 2] = ' ';
+                    stack.push({ x: nx, y: ny });
+                }
+            }
+        }
+
+        return maze;
+    }
+
+    generateGhouls() {
+        const ghouls = [];
+        while (ghouls.length < 3) {
+            const x = Math.floor(Math.random() * (this.width - 2)) + 1;
+            const y = Math.floor(Math.random() * (this.height - 2)) + 1;
+            if (this.map[y][x] === ' ' && !(x === 1 && y === 1)) {
+                ghouls.push({ x, y, hp: 1 });
+            }
+        }
+        return ghouls;
+    }
+
+    generateRunes() {
+        const runes = [];
+        for (let y = 1; y < this.height - 1; y++) {
+            for (let x = 1; x < this.width - 1; x++) {
+                if (this.map[y][x] === ' ' && Math.random() > 0.7) {
+                    runes.push({ x, y });
+                }
+            }
+        }
+        return runes;
+    }
+
+    generateOrbs() {
+        const orbs = [];
+        for (let i = 0; i < 3; i++) {
+            let x, y;
+            do {
+                x = Math.floor(Math.random() * (this.width - 2)) + 1;
+                y = Math.floor(Math.random() * (this.height - 2)) + 1;
+            } while (this.map[y][x] !== ' ');
+            orbs.push({ x, y });
+        }
+        return orbs;
+    }
+
+    generateMausoleum() {
+        let x, y;
+        do {
+            x = Math.floor(Math.random() * (this.width - 2)) + 1;
+            y = Math.floor(Math.random() * (this.height - 2)) + 1;
+        } while (this.map[y][x] !== ' ' || (x === 1 && y === 1));
+        this.map[y][x] = this.floor === 1 ? 'm' : 'M';
+        return { x, y };
+    }
+
+    generateKey() {
+        let x, y;
+        do {
+            x = Math.floor(Math.random() * (this.width - 2)) + 1;
+            y = Math.floor(Math.random() * (this.height - 2)) + 1;
+        } while (this.map[y][x] !== ' ' || (x === 1 && y === 1));
+        this.key = { x, y };
+    }
+
+    generateFogOfWar() {
+        return Array.from({ length: this.height }, () => Array.from({ length: this.width }, () => this.fogOfWarEnabled));
+    }
+
+    generateExploredMap() {
+        return Array.from({ length: this.height }, () => Array.from({ length: this.width }, () => false));
+    }
+
+    render() {
+        let output = '';
+        for (let y = 0; y < this.height; y++) {
+            for (let x = 0; x < this.width; x++) {
+                const isVisible = !this.fogOfWar[y][x];
+                const isExplored = this.explored[y][x];
+                const className = this.fogOfWarEnabled && isVisible ? 'visible' : isExplored ? 'explored' : '';
+                if (isVisible || isExplored || !this.fogOfWarEnabled) {
+                    output += `<span class="${className}">`;
+                }
+                if (this.carl.x === x && this.carl.y === y) {
+                    output += this.carl.hp > 0 ? (this.carl.skillActive ? 'C' : 'c') : '+';
+                } else if (isVisible || isExplored || !this.fogOfWarEnabled) {
+                    if (this.boss && this.boss.x === x && this.boss.y === y) {
+                        output += 'D';
+                    } else if (this.ghouls.some(g => g.x === x && g.y === y)) {
+                        output += this.carl.skillActive ? 'g' : 'G';
+                    } else if (this.runes.some(r => r.x === x && r.y === y)) {
+                        output += '.';
+                    } else if (this.orbs.some(o => o.x === x && o.y === y)) {
+                        output += 'O';
+                    } else if (this.key && this.key.x === x && this.key.y === y) {
+                        output += 'k';
+                    } else if (this.mausoleum.x === x && this.mausoleum.y === y) {
+                        output += this.floor === 1 ? 'm' : 'M';
+                    } else {
+                        output += this.map[y][x];
+                    }
+                } else {
+                    output += ' ';
+                }
+                if (isVisible || isExplored || !this.fogOfWarEnabled) {
+                    output += `</span>`;
+                }
+            }
+            output += '\n';
+        }
+        document.getElementById('game').innerHTML = output;
+
+        const status1 = `HP: ${this.carl.hp}/${this.carl.baseHp}  SP: ${this.carl.sp}  O: ${this.carl.orbs}  Floor: ${this.floor}`;
+        document.getElementById('status1').textContent = status1;
+
+        const status2 = `Points: ${this.carl.statPoints} Turn: ${this.turn}`;
+        document.getElementById('status2').textContent = status2;
+
+        const levelProgress = this.calculateLevelProgress();
+        const status3 = `Level ${this.carl.level}: [${levelProgress}]`;
+        document.getElementById('status3').textContent = status3;
+
+        if (this.gameOver) {
+            document.getElementById('status4').textContent = 'Game Over';
+            document.getElementById('status4').className = 'game-over';
+            document.getElementById('status5').textContent = 'Press Space to start a new game';
+        } else {
+            if (this.statusMessage) {
+                document.getElementById('status4').textContent = this.statusMessage;
+                document.getElementById('status4').className = 'status-message';
+            } else {
+                document.getElementById('status4').textContent = '';
+            }
+            document.getElementById('status5').textContent = '';
+        }
+    }
+
+    calculateLevelProgress() {
+        const totalExpForNextLevel = 5;
+        const progress = Math.floor((this.carl.exp % totalExpForNextLevel) / totalExpForNextLevel * 20);
+        return '*'.repeat(progress) + '-'.repeat(20 - progress);
+    }
+
+    updateFogOfWar() {
+        const visibilityRange = 5;
+        for (let y = -visibilityRange; y <= visibilityRange; y++) {
+            for (let x = -visibilityRange; x <= visibilityRange; x++) {
+                const nx = this.carl.x + x;
+                const ny = this.carl.y + y;
+                if (nx >= 0 && nx < this.width && ny >= 0 && ny < this.height && this.hasLineOfSight(this.carl.x, this.carl.y, nx, ny)) {
+                    this.fogOfWar[ny][nx] = false;
+                    this.explored[ny][nx] = true; // Mark as explored
+                }
+            }
+        }
+    }
+
+    hasLineOfSight(x0, y0, x1, y1) {
+        const dx = Math.abs(x1 - x0);
+        const dy = Math.abs(y1 - y0);
+        const sx = (x0 < x1) ? 1 : -1;
+        const sy = (y0 < y1) ? 1 : -1;
+        let err = dx - dy;
+        const visibilityRange = 5;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+
+        if (distance > visibilityRange) return false;
+
+        while (true) {
+            if (x0 === x1 && y0 === y1) return true;
+            if (this.map[y0][x0] === '#') return false;
+            const e2 = err * 2;
+            if (e2 > -dy) { err -= dy; x0 += sx; }
+            if (e2 < dx) { err += dx; y0 += sy; }
+        }
+    }
+
+    moveCarl(dx, dy) {
+        if (this.gameOver) return;
+        const newX = this.carl.x + dx;
+        const newY = this.carl.y + dy;
+        if (newX >= 0 && newX < this.width && newY >= 0 && newY < this.height && this.map[newY][newX] !== '#') {
+            this.carl.x = newX;
+            this.carl.y = newY;
+            this.turn += 1;
+            this.updateFogOfWar();
+            this.checkRunes();
+            this.checkGhouls();
+            this.checkOrbs();
+            this.checkKey();
+            this.checkMausoleum();
+            this.checkBoss();
+            this.render();
+        }
+    }
+
+    checkRunes() {
+        this.runes = this.runes.filter(r => {
+            if (r.x === this.carl.x && r.y === this.carl.y) {
+                this.carl.exp += 1;
+                if (this.carl.exp % 5 === 0) {
+                    this.levelUp();
+                }
+                return false;
+            }
+            return true;
+        });
+        if (this.runes.length === 0 && !this.carl.hasKey && this.floor !== 3) {
+            this.generateKey();
+        }
+    }
+
+    checkOrbs() {
+        this.orbs = this.orbs.filter(o => {
+            if (o.x === this.carl.x && o.y === this.carl.y) {
+                this.carl.orbs += 1;
+                return false;
+            }
+            return true;
+        });
+    }
+
+    checkKey() {
+        if (this.key && this.key.x === this.carl.x && this.key.y === this.carl.y) {
+            this.carl.hasKey = true;
+            this.key = null;
+            this.statusMessage = 'You have picked up a mausoleum key.';
+        }
+    }
+
+    checkMausoleum() {
+        if (this.mausoleum.x === this.carl.x && this.mausoleum.y === this.carl.y) {
+            if (this.carl.hasKey) {
+                this.floor += 1;
+                this.resetLevel();
+            } else {
+                this.statusMessage = 'The mausoleum is locked.';
+            }
+        }
+    }
+
+    checkBoss() {
+        if (this.floor === 3 && this.boss && this.boss.x === this.carl.x && this.boss.y === this.carl.y) {
+            this.boss.hp -= 10; // Carl deals 10 damage per turn to the boss
+            if (this.boss.hp <= 0) {
+                this.boss = null;
+                this.statusMessage = 'You have eliminated the Evil Ghouls and Demons. You have won the Game';
+                this.gameOver = true;
+            }
+        }
+    }
+
+    checkGhouls() {
+        const adjacentPositions = [
+            { x: this.carl.x - 1, y: this.carl.y },
+            { x: this.carl.x + 1, y: this.carl.y },
+            { x: this.carl.x, y: this.carl.y - 1 },
+            { x: this.carl.x, y: this.carl.y + 1 }
+        ];
+
+        this.ghouls = this.ghouls.filter(ghoul => {
+            const isAdjacent = adjacentPositions.some(pos => pos.x === ghoul.x && pos.y === ghoul.y);
+            const isBlocked = (ghoul.x === this.carl.x && this.map[Math.min(this.carl.y, ghoul.y) + 1][this.carl.x] === '#') ||
+                              (ghoul.y === this.carl.y && this.map[this.carl.y][Math.min(this.carl.x, ghoul.x) + 1] === '#');
+
+            if (isAdjacent && !isBlocked) {
+                if (!this.carl.skillActive) {
+                    this.carl.hp -= 1;
+                    if (this.carl.hp <= 0) {
+                        this.carl.hp = 0;
+                        this.gameOver = true;
+                        this.render();
+                        return false;
+                    }
+                } else {
+                    return false; // Ghoul is eaten by Carl
+                }
+            }
+            return true;
+        });
+
+        for (const ghoul of this.ghouls) {
+            if (this.carl.skillActive) {
+                this.moveGhoulAwayFromCarl(ghoul);
+            } else {
+                this.moveGhoulTowardsCarl(ghoul);
+            }
+        }
+
+        if (this.floor === 3 && !this.boss && this.ghouls.length === 0) {
+            this.statusMessage = 'You have eliminated the Evil Ghouls and Demons. You have won the Game';
+            this.gameOver = true;
+        }
+    }
+
+    levelUp() {
+        this.carl.statPoints += 3;
+        this.carl.level += 1;
+        this.carl.hp = this.carl.baseHp;
+    }
+
+    resetGame() {
+        this.level = 1;
+        this.floor = 1;
+        this.turn = 1;
+        this.carl = {
+            x: 1, y: 1, hp: 30, baseHp: 30, sp: 1, exp: 0, level: 1, orbs: 0,
+            skillDuration: 0, skillActive: false, statPoints: 0,
+            hasKey: false
+        };
+        this.gameOver = false;
+        this.initGame();
+    }
+
+    resetLevel() {
+        this.carl.x = 1;
+        this.carl.y = 1;
+        this.carl.hasKey = false;
+        this.statusMessage = '';
+        this.initGame();
+    }
+
+    activateSkill() {
+        if (this.carl.orbs > 0) {
+            this.carl.orbs -= 1;
+            this.carl.skillDuration = this.carl.sp;
+            this.carl.skillActive = true;
+        }
+    }
+
+    updateSkill() {
+        if (this.carl.skillActive) {
+            this.carl.skillDuration -= 1;
+            if (this.carl.skillDuration <= 0) {
+                this.carl.skillActive = false;
+            }
+        }
+    }
+
+    moveGhouls() {
+        for (const ghoul of this.ghouls) {
+            if (this.carl.skillActive) {
+                this.moveGhoulAwayFromCarl(ghoul);
+            } else {
+                this.moveGhoulTowardsCarl(ghoul);
+            }
+        }
+        this.checkGhouls();
+        this.render();
+    }
+
+    moveGhoulTowardsCarl(ghoul) {
+        const dx = Math.sign(this.carl.x - ghoul.x);
+        const dy = Math.sign(this.carl.y - ghoul.y);
+        const newX = ghoul.x + (Math.random() > 0.5 ? dx : 0);
+        const newY = ghoul.y + (Math.random() > 0.5 ? dy : 0);
+        if (newX >= 0 && newX < this.width && newY >= 0 && newY < this.height && this.map[newY][newX] !== '#') {
+            ghoul.x = newX;
+            ghoul.y = newY;
+        }
+    }
+
+    moveGhoulAwayFromCarl(ghoul) {
+        const dx = Math.sign(ghoul.x - this.carl.x);
+        const dy = Math.sign(ghoul.y - this.carl.y);
+        const newX = ghoul.x + (Math.random() > 0.5 ? dx : 0);
+        const newY = ghoul.y + (Math.random() > 0.5 ? dy : 0);
+        if (newX >= 0 && newX < this.width && newY >= 0 && newY < this.height && this.map[newY][newX] !== '#') {
+            ghoul.x = newX;
+            ghoul.y = newY;
+        }
+
+        if (ghoul.x === this.mausoleum.x && ghoul.y === this.mausoleum.y) {
+            ghoul.symbol = 'G';
+        }
+    }
+
+    toggleDarkMode() {
+        document.body.classList.toggle('dark-mode');
+    }
+
+    spendStatPoint(stat) {
+        if (this.carl.statPoints > 0) {
+            if (stat === 'hp') {
+                this.carl.baseHp += 10;
+            } else if (stat === 'sp') {
+                this.carl.sp += 1;
+            }
+            this.carl.statPoints -= 1;
+            this.render();
+        }
+    }
+
+    listenForInput() {
+        window.addEventListener('keydown', (e) => {
+            if (this.gameOver && this.keys.restart.includes(e.key)) {
+                this.resetGame();
+                return;
+            }
+            if (this.keys.up.includes(e.key)) { this.moveCarl(0, -1); this.updateTurn(); }
+            else if (this.keys.down.includes(e.key)) { this.moveCarl(0, 1); this.updateTurn(); }
+            else if (this.keys.left.includes(e.key)) { this.moveCarl(-1, 0); this.updateTurn(); }
+            else if (this.keys.right.includes(e.key)) { this.moveCarl(1, 0); this.updateTurn(); }
+            else if (this.keys.useOrb.includes(e.key)) { this.activateSkill(); this.updateTurn(); }
+            else if (this.keys.toggleDarkMode.includes(e.key)) { this.toggleDarkMode(); }
+            else if (this.keys.spendHp.includes(e.key)) { this.spendStatPoint('hp'); }
+            else if (this.keys.spendSp.includes(e.key)) { this.spendStatPoint('sp'); }
+        });
+    }
+
+    updateTurn() {
+        this.updateSkill();
+        this.moveGhouls();
+    }
+}
+
+const options = {
+    width: 26,
+    height: 13,
+    hp: 30,
+    sp: 1,
+    fogOfWarEnabled: true, // Set to false to disable fog of war
+    keys: {
+        up: ['ArrowUp', 'W', 'w'],
+        down: ['ArrowDown', 'S', 's'],
+        left: ['ArrowLeft', 'A', 'a'],
+        right: ['ArrowRight', 'D', 'd'],
+        useOrb: [' '],
+        toggleDarkMode: ['M', 'm'],
+        spendHp: ['E', 'e'],
+        spendSp: ['Q', 'q'],
+        restart: [' ']
+    }
+};
+
+const game = new CarlGame(options);
+</script>
+</body>
+</html>
